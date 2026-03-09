@@ -1,10 +1,14 @@
 import fetch from 'node-fetch';
+import https from 'node:https';
 
 const BASE_URL = 'https://musicbrainz.org/ws/2';
 const COVER_ART_URL = 'https://coverartarchive.org';
 // MusicBrainz requires a meaningful User-Agent with contact info per their API policy
 const CONTACT_EMAIL = process.env.MB_CONTACT_EMAIL || 'contact@example.com';
 const USER_AGENT = `SongRanker/1.0.0 (${CONTACT_EMAIL})`;
+
+// Disable keep-alive to prevent stale socket reuse causing TLS errors
+const httpsAgent = new https.Agent({ keepAlive: false });
 
 // Rate limiting: max 1 request per second
 let lastRequestTime = 0;
@@ -18,6 +22,7 @@ async function rateLimitedFetch(url) {
   lastRequestTime = Date.now();
 
   const response = await fetch(url, {
+    agent: httpsAgent,
     headers: {
       'User-Agent': USER_AGENT,
       Accept: 'application/json',
@@ -69,6 +74,7 @@ export async function getCoverArtUrl(releaseId) {
   try {
     const url = `${COVER_ART_URL}/release/${releaseId}`;
     const response = await fetch(url, {
+      agent: httpsAgent,
       headers: { 'User-Agent': USER_AGENT },
       redirect: 'follow',
     });
