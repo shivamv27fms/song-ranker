@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { getAllSongs, getSongById, addSong, deleteSong } from '../database/queries.js';
 import { getSongByMusicBrainzId } from '../database/queries.js';
+import { getCoverArtUrl } from '../services/musicbrainz.js';
 
 const router = Router();
 
@@ -32,9 +33,9 @@ router.get('/:id', (req, res, next) => {
 });
 
 // POST /api/songs
-router.post('/', (req, res, next) => {
+router.post('/', async (req, res, next) => {
   try {
-    const { musicbrainz_id, title, artist, album, year, genre, cover_art_url } = req.body;
+    const { musicbrainz_id, title, artist, album, year, genre, cover_art_url, release_id } = req.body;
 
     if (!title || !artist) {
       return res.status(400).json({ error: 'title and artist are required' });
@@ -48,7 +49,17 @@ router.post('/', (req, res, next) => {
       }
     }
 
-    const song = addSong({ musicbrainz_id, title, artist, album, year, genre, cover_art_url });
+    // Fetch cover art if not provided but release_id is available
+    let finalCoverArtUrl = cover_art_url || null;
+    if (!finalCoverArtUrl && release_id) {
+      try {
+        finalCoverArtUrl = await getCoverArtUrl(release_id);
+      } catch {
+        // Cover art fetch failed; proceed without it
+      }
+    }
+
+    const song = addSong({ musicbrainz_id, title, artist, album, year, genre, cover_art_url: finalCoverArtUrl });
     res.status(201).json(song);
   } catch (err) {
     next(err);
