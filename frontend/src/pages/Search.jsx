@@ -37,6 +37,7 @@ export default function Search() {
         album: recording.album,
         year: recording.year,
         cover_art_url: recording.cover_art_url,
+        release_id: recording.release_id,
       });
       setAddedIds((prev) => new Set([...prev, recording.musicbrainz_id]));
       toast.success(`Added "${recording.title}" to library`);
